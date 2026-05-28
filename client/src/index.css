@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+/* ─── Floating bob animation ─────────────────────────────── */
+@keyframes frame-bob {
+  0%,  100% { transform: translateY(0px);   }
+  50%        { transform: translateY(-10px); }
+}
+
+.frame-float {
+  animation: frame-bob 4.5s ease-in-out infinite;
+}
+
+/* Hover scale on the inner div */
+.frame-float:hover .frame-hover-scale {
+  transform: scale(1.045);
+}
+
+/* Staggered bob durations per frame, driven by animation-delay set inline */
+.frame-float:nth-child(odd)  { animation-duration: 4.2s; }
+.frame-float:nth-child(even) { animation-duration: 5.1s; }
+
+/* ─── Scrollbar styling ──────────────────────────────────── */
+::-webkit-scrollbar          { width: 6px; height: 6px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    { background: rgba(0,0,0,0.18); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.30); }
+
+/* ─── Prevent text selection while dragging canvas ──────── */
+.no-select { user-select: none; }
+
+/* ─── Focus ring override ─────────────────────────────────── */
+[data-frame]:focus-visible {
+  outline: 3px solid rgba(255,215,0,0.8);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+

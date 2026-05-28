@@ -1,0 +1,236 @@
+{
+  "1": {
+    "w": 174,
+    "h": 207,
+    "opening": [
+      38,
+      38,
+      136,
+      168
+    ],
+    "aspect": "portrait",
+    "openingW": 98,
+    "openingH": 130
+  },
+  "2": {
+    "w": 190,
+    "h": 155,
+    "opening": [
+      39,
+      38,
+      149,
+      117
+    ],
+    "aspect": "landscape",
+    "openingW": 110,
+    "openingH": 79
+  },
+  "3": {
+    "w": 171,
+    "h": 196,
+    "opening": [
+      37,
+      38,
+      133,
+      158
+    ],
+    "aspect": "portrait",
+    "openingW": 96,
+    "openingH": 120
+  },
+  "4": {
+    "w": 150,
+    "h": 179,
+    "opening": [
+      36,
+      32,
+      114,
+      146
+    ],
+    "aspect": "portrait",
+    "openingW": 78,
+    "openingH": 114
+  },
+  "5": {
+    "w": 160,
+    "h": 201,
+    "opening": [
+      15,
+      21,
+      122,
+      179
+    ],
+    "aspect": "portrait",
+    "openingW": 107,
+    "openingH": 158
+  },
+  "6": {
+    "w": 209,
+    "h": 219,
+    "opening": [
+      46,
+      46,
+      163,
+      174
+    ],
+    "aspect": "portrait",
+    "openingW": 117,
+    "openingH": 128
+  },
+  "7": {
+    "w": 150,
+    "h": 199,
+    "opening": [
+      18,
+      32,
+      132,
+      171
+    ],
+    "aspect": "portrait",
+    "openingW": 114,
+    "openingH": 139
+  },
+  "8": {
+    "w": 164,
+    "h": 182,
+    "opening": [
+      38,
+      36,
+      126,
+      144
+    ],
+    "aspect": "portrait",
+    "openingW": 88,
+    "openingH": 108
+  },
+  "9": {
+    "w": 204,
+    "h": 151,
+    "opening": [
+      37,
+      37,
+      166,
+      113
+    ],
+    "aspect": "landscape",
+    "openingW": 129,
+    "openingH": 76
+  },
+  "10": {
+    "w": 122,
+    "h": 185,
+    "opening": [
+      28,
+      22,
+      95,
+      166
+    ],
+    "aspect": "portrait",
+    "openingW": 67,
+    "openingH": 144
+  },
+  "11": {
+    "w": 158,
+    "h": 188,
+    "opening": [
+      28,
+      28,
+      130,
+      160
+    ],
+    "aspect": "portrait",
+    "openingW": 102,
+    "openingH": 132
+  },
+  "12": {
+    "w": 224,
+    "h": 170,
+    "opening": [
+      33,
+      32,
+      191,
+      138
+    ],
+    "aspect": "landscape",
+    "openingW": 158,
+    "openingH": 106
+  },
+  "13": {
+    "w": 170,
+    "h": 173,
+    "opening": [
+      39,
+      39,
+      130,
+      132
+    ],
+    "aspect": "portrait",
+    "openingW": 91,
+    "openingH": 93
+  },
+  "14": {
+    "w": 191,
+    "h": 150,
+    "opening": [
+      43,
+      39,
+      148,
+      110
+    ],
+    "aspect": "landscape",
+    "openingW": 105,
+    "openingH": 71
+  },
+  "15": {
+    "w": 180,
+    "h": 142,
+    "opening": [
+      32,
+      33,
+      148,
+      109
+    ],
+    "aspect": "landscape",
+    "openingW": 116,
+    "openingH": 76
+  },
+  "16": {
+    "w": 178,
+    "h": 216,
+    "opening": [
+      41,
+      39,
+      136,
+      176
+    ],
+    "aspect": "portrait",
+    "openingW": 95,
+    "openingH": 137
+  },
+  "17": {
+    "w": 235,
+    "h": 162,
+    "opening": [
+      39,
+      37,
+      196,
+      124
+    ],
+    "aspect": "landscape",
+    "openingW": 157,
+    "openingH": 87
+  },
+  "18": {
+    "w": 214,
+    "h": 198,
+    "opening": [
+      49,
+      46,
+      165,
+      157
+    ],
+    "aspect": "square",
+    "openingW": 116,
+    "openingH": 111
+  }
+}

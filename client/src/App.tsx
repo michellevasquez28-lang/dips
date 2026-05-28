@@ -1,0 +1,258 @@
+import React, { useRef, useState, useEffect, useCallback } from 'react'
+import Sidebar from './components/Sidebar'
+import TopNav from './components/TopNav'
+import Canvas, { CanvasHandle } from './components/Canvas'
+import ProjectModal from './components/ProjectModal'
+import UploadModal from './components/UploadModal'
+import UserProfileModal from './components/UserProfileModal'
+import MessagesPage from './components/MessagesPage'
+import LoginModal from './components/LoginModal'
+import { useProjects } from './hooks/useProjects'
+import { api } from './lib/api'
+import { Project, Message, User } from './types'
+
+// Persist auth for the current tab only (clears when tab is closed)
+function loadAuth(): { user: User; token: string } | null {
+  try {
+    const raw = sessionStorage.getItem('dips_auth')
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+function saveAuth(user: User | null, token: string | null) {
+  if (user && token) {
+    sessionStorage.setItem('dips_auth', JSON.stringify({ user, token }))
+  } else {
+    sessionStorage.removeItem('dips_auth')
+  }
+}
+
+export default function App() {
+  const [isMobile, setIsMobile] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [view, setView] = useState<'gallery' | 'messages'>('gallery')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [messagesLoading, setMessagesLoading] = useState(false)
+
+  const savedAuth = loadAuth()
+  const [currentUser, setCurrentUser] = useState<User | null>(savedAuth?.user ?? null)
+  const [authToken, setAuthToken] = useState<string | null>(savedAuth?.token ?? null)
+  const [showLogin, setShowLogin] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  // Load this user's messages from the backend whenever they sign in/out
+  useEffect(() => {
+    if (!currentUser || !authToken) {
+      setMessages([])
+      return
+    }
+    setMessagesLoading(true)
+    api.getMessages(currentUser.id, authToken)
+      .then(setMessages)
+      .catch(console.error)
+      .finally(() => setMessagesLoading(false))
+  }, [currentUser?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const {
+    projects,
+    searchQuery,
+    setSearchQuery,
+    filters,
+    setFilters,
+    isFiltered,
+    addProject,
+    deleteProject,
+    likeProject,
+    unlikeProject,
+    addComment,
+    applyFilters,
+    clearFilters,
+    hasActiveFilters,
+  } = useProjects(authToken)
+
+  const canvasRef = useRef<CanvasHandle>(null)
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [authorModal, setAuthorModal] = useState<string | null>(null)
+
+  const selectedProject = selectedProjectId
+    ? projects.find((p) => p.id === selectedProjectId) ?? null
+    : null
+
+  const handleGoHome = useCallback(() => {
+    clearFilters()
+    canvasRef.current?.resetView()
+    setView('gallery')
+  }, [clearFilters])
+
+  const handleMessageSent = useCallback(async (
+    msg: Omit<Message, 'id' | 'sentAt' | 'direction'> & { recipientId?: string }
+  ) => {
+    if (!currentUser || !authToken || !msg.recipientId) return
+    try {
+      const saved = await api.sendMessage(
+        currentUser.id,
+        msg.recipientId,
+        msg.subject,
+        msg.body,
+        authToken
+      )
+      setMessages((prev) => [saved, ...prev])
+    } catch (e) {
+      console.error('Failed to send message', e)
+    }
+  }, [currentUser, authToken])
+
+  const handleLogin = useCallback((user: User, token: string) => {
+    setCurrentUser(user)
+    setAuthToken(token)
+    saveAuth(user, token)
+  }, [])
+
+  const handleLogout = useCallback(() => {
+    setCurrentUser(null)
+    setAuthToken(null)
+    setMessages([])
+    saveAuth(null, null)
+  }, [])
+
+  const handleUploadClick = useCallback(() => {
+    if (!currentUser) {
+      setShowLogin(true)
+    } else {
+      setUploadOpen(true)
+    }
+  }, [currentUser])
+
+  // Gallery layout
+  const galleryContent = (
+    <div className="flex-1 overflow-hidden relative flex flex-col">
+      {!sidebarOpen && (
+        <TopNav
+          onOpenSidebar={() => setSidebarOpen(true)}
+          onZoomIn={() => canvasRef.current?.zoomIn()}
+          onZoomOut={() => canvasRef.current?.zoomOut()}
+          onGoHome={handleGoHome}
+          currentUser={currentUser}
+          onLoginClick={() => setShowLogin(true)}
+        />
+      )}
+      {!isMobile && (
+        <Canvas
+          ref={canvasRef}
+          projects={projects}
+          onFrameClick={(p: Project) => setSelectedProjectId(p.id)}
+          isFiltered={isFiltered}
+          hasActiveFilters={hasActiveFilters}
+        />
+      )}
+      {isMobile && (
+        <div className="flex-1 overflow-y-auto bg-white p-4 flex flex-col gap-4" aria-label="Project list">
+          <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', color: '#1a6b3a' }}>
+            DiPs Gallery
+          </h1>
+          {projects.map((p) => (
+            <button key={p.id} onClick={() => setSelectedProjectId(p.id)}
+              className="w-full text-left rounded-xl overflow-hidden shadow"
+              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+            >
+              <div className="h-32" style={{ background: p.imageUrl ? undefined : p.gradient }}>
+                {p.imageUrl && <img src={p.imageUrl} alt={p.title} className="w-full h-full object-cover" />}
+              </div>
+              <div className="p-3 bg-white">
+                <p className="font-bold text-gray-800">{p.title}</p>
+                <p className="text-sm text-gray-500">{p.author}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-white">
+      {sidebarOpen && view === 'gallery' && (
+        <Sidebar
+          projectCount={projects.length}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filters={filters}
+          onFiltersChange={setFilters}
+          onApplyFilters={applyFilters}
+          onClearFilters={clearFilters}
+          onUploadClick={handleUploadClick}
+          onZoomIn={() => canvasRef.current?.zoomIn()}
+          onZoomOut={() => canvasRef.current?.zoomOut()}
+          onGoHome={handleGoHome}
+          onViewMessages={() => setView('messages')}
+          onCollapse={() => setSidebarOpen(false)}
+          currentUser={currentUser}
+          onLoginClick={() => setShowLogin(true)}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {view === 'gallery' ? galleryContent : (
+        <MessagesPage
+          messages={messages}
+          currentUser={currentUser}
+          authToken={authToken}
+          onGoHome={handleGoHome}
+          onMessageAdded={(msg) => setMessages((prev) => [msg, ...prev])}
+        />
+      )}
+
+      {selectedProject && (
+        <ProjectModal
+          project={selectedProject}
+          currentUser={currentUser}
+          onClose={() => setSelectedProjectId(null)}
+          onLike={(id, userId) => likeProject(id, userId)}
+          onUnlike={(id, userId) => unlikeProject(id, userId)}
+          onComment={(projectId, text, userId, userName) => addComment(projectId, text, userId, userName)}
+          onAuthorClick={(name) => setAuthorModal(name)}
+          onMessageSent={handleMessageSent}
+          onSignInRequired={() => setShowLogin(true)}
+          onDelete={(id, authorDbId) => {
+            deleteProject(id, authorDbId)
+            setSelectedProjectId(null)
+          }}
+        />
+      )}
+
+      {uploadOpen && (
+        <UploadModal
+          existingProjects={projects}
+          currentUser={currentUser}
+          authToken={authToken}
+          onClose={() => setUploadOpen(false)}
+          onSubmit={addProject}
+        />
+      )}
+
+      {authorModal && (
+        <UserProfileModal
+          authorName={authorModal}
+          projects={projects.filter((p) => p.author === authorModal)}
+          onClose={() => setAuthorModal(null)}
+          onProjectClick={(p) => { setAuthorModal(null); setSelectedProjectId(p.id) }}
+        />
+      )}
+
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onLogin={handleLogin}
+        />
+      )}
+    </div>
+  )
+}

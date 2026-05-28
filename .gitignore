@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output
+client/dist/
+server/dist/
+
+# Database (keep schema, ignore data file)
+server/prisma/dev.db
+server/prisma/dev.db-journal
+
+# Uploaded files (user content, not tracked in git)
+server/uploads/
+
+# Environment secrets
+.env
+server/.env
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
+**/settings.local.json
+
+# OS / editor
+.DS_Store
+*.local
