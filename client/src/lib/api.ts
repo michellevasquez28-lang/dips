@@ -1,5 +1,7 @@
 // Central API client — all calls to the Express backend go through here.
-const BASE = ''  // Vite proxies /api → http://localhost:5000
+// In production, VITE_API_URL is the deployed backend URL (e.g. https://dips-api.railway.app).
+// In local dev, it's empty and the Vite proxy forwards /api → localhost:5001.
+const BASE = (import.meta.env.VITE_API_URL as string) || ''
 
 export async function apiFetch<T>(
   path: string,
