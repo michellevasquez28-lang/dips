@@ -1,0 +1,22 @@
+[build]
+  command = "cd server && npm install && npx prisma generate && cd ../client && npm install && npm run build"
+  publish = "client/dist"
+  functions = "server/netlify-fn"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Route all /api/* calls to the Express serverless function.
+# Must come before the SPA catch-all below.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+# SPA catch-all: serve index.html for every non-file route so
+# React Router / client-side navigation works on hard refresh.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
