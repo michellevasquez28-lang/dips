@@ -85,6 +85,38 @@ async function renderPDFFirstPage(file: File): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.88)
 }
 
+// Renders the PDF first page into a canvas that matches the frame opening's aspect ratio.
+// The page is scaled to fit (contain) with a white background, so there's no cropping.
+async function renderPDFForFrame(file: File, frameIndex: number): Promise<string> {
+  const fd = FRAME_DATA[frameIndex]
+  if (!fd) return renderPDFFirstPage(file)
+
+  const aspect = fd.ow / fd.oh
+  const longSide = 700
+  const targetW = aspect >= 1 ? longSide : Math.round(longSide * aspect)
+  const targetH = aspect >= 1 ? Math.round(longSide / aspect) : longSide
+
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise
+  const page = await pdf.getPage(1)
+  const nat = page.getViewport({ scale: 1 })
+  const fitScale = Math.min(targetW / nat.width, targetH / nat.height)
+  const vp = page.getViewport({ scale: fitScale })
+
+  const canvas = document.createElement('canvas')
+  canvas.width = targetW
+  canvas.height = targetH
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, targetW, targetH)
+  ctx.save()
+  ctx.translate(Math.round((targetW - vp.width) / 2), Math.round((targetH - vp.height) / 2))
+  await page.render({ canvasContext: ctx, viewport: vp }).promise
+  ctx.restore()
+
+  return canvas.toDataURL('image/jpeg', 0.9)
+}
+
 type Step = 1 | 2 | 3
 
 const StepIndicator = ({ current }: { current: Step }) => (
@@ -164,10 +196,21 @@ const UploadModal: React.FC<UploadModalProps> = ({ existingProjects, currentUser
     if (file) handlePDF(file)
   }
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (step === 2) {
       const idx = ALL_FRAME_INDICES[Math.floor(Math.random() * ALL_FRAME_INDICES.length)]
       setAssignedFrame(idx)
+      if (pdfFile && !renderError) {
+        setIsRendering(true)
+        try {
+          const thumb = await renderPDFForFrame(pdfFile, idx)
+          setPdfPreviewImage(thumb)
+        } catch (e) {
+          console.error('Frame thumbnail render error:', e)
+        } finally {
+          setIsRendering(false)
+        }
+      }
     }
     setStep((s) => (s + 1) as Step)
   }
@@ -456,11 +499,11 @@ const UploadModal: React.FC<UploadModalProps> = ({ existingProjects, currentUser
           {step === 3 && (
             <div className="text-center">
               <div
-                className="mx-auto rounded-xl overflow-hidden mb-4 shadow-md"
+                className="mx-auto rounded-xl overflow-hidden mb-4 shadow-md bg-white"
                 style={{ width: 240, height: 180 }}
               >
                 {pdfPreviewImage ? (
-                  <img src={pdfPreviewImage} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={pdfPreviewImage} alt="Preview" className="w-full h-full object-contain" />
                 ) : (
                   <div className="w-full h-full" style={{ background: selectedGradient }} />
                 )}
@@ -527,10 +570,13 @@ const UploadModal: React.FC<UploadModalProps> = ({ existingProjects, currentUser
               <button
                 onClick={handleContinue}
                 disabled={!canProceed || isRendering}
-                className="flex-1 py-2.5 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 style={{ backgroundColor: '#1a6b3a', fontFamily: 'Cormorant Garamond, Georgia, serif' }}
               >
-                Continue
+                {isRendering && step === 2 && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                {isRendering && step === 2 ? 'Preparing…' : 'Continue'}
               </button>
             ) : (
               <button

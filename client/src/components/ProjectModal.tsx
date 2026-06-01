@@ -278,13 +278,15 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
             <div className="flex flex-wrap gap-3 mb-6 pb-6 border-b border-gray-100">
               <button
                 onClick={handleLike}
-                aria-label={liked ? 'Unlike this project' : 'Like this project'}
+                aria-label={liked ? 'Unlike this project' : !currentUser ? 'Sign in to like this project' : 'Like this project'}
+                title={!currentUser ? 'Sign in to like' : undefined}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 active:scale-95"
                 style={{
                   backgroundColor: liked ? '#fef2f2' : '#f9f9f9',
                   color: liked ? '#e53935' : '#888',
                   border: `1px solid ${liked ? '#fecaca' : '#e5e5e5'}`,
                   fontFamily: 'Cormorant Garamond, Georgia, serif',
+                  cursor: !currentUser ? 'pointer' : undefined,
                 }}
               >
                 <Heart
