@@ -1,10 +1,12 @@
 import { Router, Request, Response } from 'express'
-import { PrismaClient } from '@prisma/client'
+import { v4 as uuidv4 } from 'uuid'
+import { messages, findUserById, StoredMessage } from '../src/store'
 
 const router = Router()
-const prisma = new PrismaClient()
 
-function formatMsg(m: any, direction: 'sent' | 'received') {
+function formatMsg(m: StoredMessage, direction: 'sent' | 'received') {
+  const fromUser = findUserById(m.fromId)
+  const toUser = findUserById(m.toId)
   return {
     id: m.id,
     subject: m.subject ?? '',
@@ -15,7 +17,7 @@ function formatMsg(m: any, direction: 'sent' | 'received') {
       year: 'numeric',
     }),
     direction,
-    correspondent: direction === 'sent' ? m.to?.name ?? 'Unknown' : m.from?.name ?? 'Unknown',
+    correspondent: direction === 'sent' ? toUser?.name ?? 'Unknown' : fromUser?.name ?? 'Unknown',
     correspondentId: direction === 'sent' ? m.toId : m.fromId,
   }
 }
@@ -27,13 +29,15 @@ router.post('/', async (req: Request, res: Response) => {
     if (!fromId || !toId || !body) {
       return res.status(400).json({ error: 'fromId, toId, and body are required' })
     }
-    const message = await prisma.message.create({
-      data: { subject: subject ?? '', body, fromId, toId },
-      include: {
-        to: { select: { name: true } },
-        from: { select: { name: true } },
-      },
-    })
+    const message: StoredMessage = {
+      id: uuidv4(),
+      subject: subject ?? '',
+      body,
+      fromId,
+      toId,
+      createdAt: new Date(),
+    }
+    messages.push(message)
     res.json(formatMsg(message, 'sent'))
   } catch (e) {
     console.error(e)
@@ -41,36 +45,14 @@ router.post('/', async (req: Request, res: Response) => {
   }
 })
 
-// GET /api/messages/user/:userId — all sent + received for a user, newest first
+// GET /api/messages/user/:userId — all sent + received, newest first
 router.get('/user/:userId', async (req: Request, res: Response) => {
   try {
     const userId = req.params.userId
-    const [sent, received] = await Promise.all([
-      prisma.message.findMany({
-        where: { fromId: userId },
-        include: {
-          to: { select: { name: true } },
-          from: { select: { name: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.message.findMany({
-        where: { toId: userId },
-        include: {
-          to: { select: { name: true } },
-          from: { select: { name: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-      }),
-    ])
-
-    const all = [
-      ...sent.map((m) => ({ ...m, _dir: 'sent' as const })),
-      ...received.map((m) => ({ ...m, _dir: 'received' as const })),
-    ]
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .map((m) => formatMsg(m, m._dir))
-
+    const all = messages
+      .filter((m) => m.fromId === userId || m.toId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map((m) => formatMsg(m, m.fromId === userId ? 'sent' : 'received'))
     res.json(all)
   } catch (e) {
     console.error(e)
@@ -78,24 +60,19 @@ router.get('/user/:userId', async (req: Request, res: Response) => {
   }
 })
 
-// GET /api/messages/thread/:userId/:otherUserId — full conversation between two users, oldest first
+// GET /api/messages/thread/:userId/:otherUserId — full conversation, oldest first
 router.get('/thread/:userId/:otherUserId', async (req: Request, res: Response) => {
   try {
     const { userId, otherUserId } = req.params
-    const messages = await prisma.message.findMany({
-      where: {
-        OR: [
-          { fromId: userId, toId: otherUserId },
-          { fromId: otherUserId, toId: userId },
-        ],
-      },
-      include: {
-        to: { select: { name: true } },
-        from: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'asc' },
-    })
-    res.json(messages.map((m) => formatMsg(m, m.fromId === userId ? 'sent' : 'received')))
+    const thread = messages
+      .filter(
+        (m) =>
+          (m.fromId === userId && m.toId === otherUserId) ||
+          (m.fromId === otherUserId && m.toId === userId)
+      )
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+      .map((m) => formatMsg(m, m.fromId === userId ? 'sent' : 'received'))
+    res.json(thread)
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'Server error' })
@@ -105,15 +82,11 @@ router.get('/thread/:userId/:otherUserId', async (req: Request, res: Response) =
 // Legacy inbox endpoint
 router.get('/inbox/:userId', async (req: Request, res: Response) => {
   try {
-    const messages = await prisma.message.findMany({
-      where: { toId: req.params.userId },
-      include: {
-        from: { select: { name: true } },
-        to: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-    res.json(messages.map((m) => formatMsg(m, 'received')))
+    const received = messages
+      .filter((m) => m.toId === req.params.userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .map((m) => formatMsg(m, 'received'))
+    res.json(received)
   } catch (e) {
     res.status(500).json({ error: 'Server error' })
   }

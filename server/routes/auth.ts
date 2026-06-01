@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
-import { PrismaClient } from '@prisma/client'
+import { findUserByEmail, createUser } from '../src/store'
 
 const router = Router()
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'dips-secret-key-dev'
 
 // Dartmouth sign-in: name + @dartmouth.edu email, auto-register on first use
@@ -17,11 +16,9 @@ router.post('/dartmouth', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Only @dartmouth.edu addresses are allowed.' })
     }
 
-    let user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+    let user = findUserByEmail(normalizedEmail)
     if (!user) {
-      user = await prisma.user.create({
-        data: { name: name.trim(), email: normalizedEmail, password: '' },
-      })
+      user = createUser(name.trim(), normalizedEmail)
     }
 
     const isAdmin = normalizedEmail === (process.env.ADMIN_EMAIL ?? '').toLowerCase().trim()
