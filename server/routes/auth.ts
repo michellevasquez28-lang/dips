@@ -1,36 +1,27 @@
 import { Router, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
-import { OAuth2Client } from 'google-auth-library'
 import { PrismaClient } from '@prisma/client'
 
 const router = Router()
 const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'dips-secret-key-dev'
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
-// Google Sign-In: verify Google ID token, enforce @dartmouth.edu, auto-register.
-router.post('/google', async (req: Request, res: Response) => {
+// Dartmouth sign-in: name + @dartmouth.edu email, auto-register on first use
+router.post('/dartmouth', async (req: Request, res: Response) => {
   try {
-    const { credential } = req.body
-    if (!credential) return res.status(400).json({ error: 'Missing credential.' })
+    const { name, email } = req.body
+    if (!name || !email) return res.status(400).json({ error: 'Name and email are required.' })
 
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    })
-    const payload = ticket.getPayload()
-    if (!payload) return res.status(400).json({ error: 'Invalid Google token.' })
-
-    const email = payload.email?.toLowerCase()
-    const name = payload.name ?? email?.split('@')[0] ?? 'Dartmouth User'
-
-    if (!email?.endsWith('@dartmouth.edu')) {
-      return res.status(403).json({ error: 'Only @dartmouth.edu accounts are allowed.' })
+    const normalizedEmail = email.toLowerCase().trim()
+    if (!normalizedEmail.endsWith('@dartmouth.edu')) {
+      return res.status(403).json({ error: 'Only @dartmouth.edu addresses are allowed.' })
     }
 
-    let user = await prisma.user.findUnique({ where: { email } })
+    let user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
     if (!user) {
-      user = await prisma.user.create({ data: { name, email, password: '' } })
+      user = await prisma.user.create({
+        data: { name: name.trim(), email: normalizedEmail, password: '' },
+      })
     }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' })

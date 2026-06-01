@@ -27,10 +27,10 @@ export async function apiFetch<T>(
 
 export const api = {
   // Auth
-  googleLogin: (credential: string) =>
+  dartmouthLogin: (name: string, email: string) =>
     apiFetch<{ token: string; user: { id: string; name: string; email: string } }>(
-      '/api/auth/google',
-      { method: 'POST', body: JSON.stringify({ credential }) }
+      '/api/auth/dartmouth',
+      { method: 'POST', body: JSON.stringify({ name, email }) }
     ),
 
   // Projects
