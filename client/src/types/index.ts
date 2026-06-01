@@ -57,6 +57,7 @@ export interface User {
   name: string
   email: string
   initials: string
+  isAdmin?: boolean
 }
 
 export interface CanvasTransform {

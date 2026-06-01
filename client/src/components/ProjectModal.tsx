@@ -138,6 +138,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
     !!currentUser &&
     !!project.authorDbId &&
     currentUser.id === project.authorDbId
+  const canDelete = isOwner || !!currentUser?.isAdmin
 
   const handleLike = () => {
     if (!currentUser) { onSignInRequired(); return }
@@ -158,8 +159,8 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
   }
 
   const handleDelete = () => {
-    if (!project.authorDbId) return
-    onDelete(project.id, project.authorDbId)
+    if (!currentUser) return
+    onDelete(project.id, currentUser.id)
     onClose()
   }
 
@@ -311,7 +312,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
               </button>
 
               {/* Delete — only for the project owner */}
-              {isOwner && !confirmDelete && (
+              {canDelete && !confirmDelete && (
                 <button
                   onClick={() => setConfirmDelete(true)}
                   aria-label="Delete this project"
@@ -328,7 +329,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                 </button>
               )}
 
-              {isOwner && confirmDelete && (
+              {canDelete && confirmDelete && (
                 <div className="flex items-center gap-2 flex-wrap ml-auto">
                   <span
                     className="text-sm text-gray-500"

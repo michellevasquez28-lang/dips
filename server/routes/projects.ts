@@ -161,10 +161,20 @@ router.post(
 // DELETE project (only by author)
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const { authorId } = req.body
+    const { authorId: requesterId } = req.body
     const project = await prisma.project.findUnique({ where: { id: req.params.id } })
     if (!project) return res.status(404).json({ error: 'Not found' })
-    if (project.authorId !== authorId) return res.status(403).json({ error: 'Forbidden' })
+
+    const isOwner = project.authorId === requesterId
+    let isAdmin = false
+    if (!isOwner) {
+      const adminEmail = (process.env.ADMIN_EMAIL ?? '').toLowerCase().trim()
+      if (adminEmail) {
+        const requester = await prisma.user.findUnique({ where: { id: requesterId } })
+        isAdmin = requester?.email === adminEmail
+      }
+    }
+    if (!isOwner && !isAdmin) return res.status(403).json({ error: 'Forbidden' })
 
     if (project.imageUrl) {
       const publicId = extractPublicId(project.imageUrl)

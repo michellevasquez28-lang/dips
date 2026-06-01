@@ -31,7 +31,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         .join('')
         .toUpperCase()
         .slice(0, 2)
-      const user: User = { id: apiUser.id, name: apiUser.name, email: apiUser.email, initials }
+      const user: User = { id: apiUser.id, name: apiUser.name, email: apiUser.email, initials, isAdmin: apiUser.isAdmin ?? false }
       onLogin(user, token)
       onClose()
     } catch (err: any) {

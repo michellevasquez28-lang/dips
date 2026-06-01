@@ -24,8 +24,9 @@ router.post('/dartmouth', async (req: Request, res: Response) => {
       })
     }
 
+    const isAdmin = normalizedEmail === (process.env.ADMIN_EMAIL ?? '').toLowerCase().trim()
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' })
-    res.json({ token, user: { id: user.id, name: user.name, email: user.email } })
+    res.json({ token, user: { id: user.id, name: user.name, email: user.email, isAdmin } })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'Server error' })
