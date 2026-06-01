@@ -1,30 +1,36 @@
 import { Router, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
+import { OAuth2Client } from 'google-auth-library'
 import { PrismaClient } from '@prisma/client'
 
 const router = Router()
 const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'dips-secret-key-dev'
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
-// Dartmouth single-sign-on simulation: auto-register/login with @dartmouth.edu email only.
-// No password — relies on email domain validation as the trust mechanism (demo/prototype).
-router.post('/dartmouth', async (req: Request, res: Response) => {
+// Google Sign-In: verify Google ID token, enforce @dartmouth.edu, auto-register.
+router.post('/google', async (req: Request, res: Response) => {
   try {
-    const { name, email } = req.body
-    if (!name?.trim() || !email?.trim()) {
-      return res.status(400).json({ error: 'Name and email are required.' })
-    }
-    if (!email.trim().toLowerCase().endsWith('@dartmouth.edu')) {
-      return res.status(400).json({ error: 'Must use a @dartmouth.edu email address.' })
+    const { credential } = req.body
+    if (!credential) return res.status(400).json({ error: 'Missing credential.' })
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    })
+    const payload = ticket.getPayload()
+    if (!payload) return res.status(400).json({ error: 'Invalid Google token.' })
+
+    const email = payload.email?.toLowerCase()
+    const name = payload.name ?? email?.split('@')[0] ?? 'Dartmouth User'
+
+    if (!email?.endsWith('@dartmouth.edu')) {
+      return res.status(403).json({ error: 'Only @dartmouth.edu accounts are allowed.' })
     }
 
-    const normalEmail = email.trim().toLowerCase()
-
-    let user = await prisma.user.findUnique({ where: { email: normalEmail } })
+    let user = await prisma.user.findUnique({ where: { email } })
     if (!user) {
-      user = await prisma.user.create({
-        data: { name: name.trim(), email: normalEmail, password: '' },
-      })
+      user = await prisma.user.create({ data: { name, email, password: '' } })
     }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' })

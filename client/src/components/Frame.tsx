@@ -44,9 +44,14 @@ const FrameContent: React.FC<FrameContentProps> = ({ frameIndex, gradient, image
   const W = Math.round(fd.w * scale)
   const H = Math.round(fd.h * scale)
 
+  const ox = Math.round(fd.ox * scale)
+  const oy = Math.round(fd.oy * scale)
+  const ow = Math.round(fd.ow * scale)
+  const oh = Math.round(fd.oh * scale)
+
   return (
     <div style={{ position: 'relative', width: W, height: H }}>
-      {/* Artwork — masked to only appear inside the frame opening */}
+      {/* Artwork — positioned and sized to fill exactly the frame opening */}
       <div
         style={{
           position: 'absolute',
@@ -57,11 +62,21 @@ const FrameContent: React.FC<FrameContentProps> = ({ frameIndex, gradient, image
           maskSize: '100% 100%',
         }}
       >
-        {imageUrl ? (
-          <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        ) : (
-          <div style={{ width: '100%', height: '100%', background: gradient }} />
-        )}
+        <div
+          style={{
+            position: 'absolute',
+            left: ox,
+            top: oy,
+            width: ow,
+            height: oh,
+          }}
+        >
+          {imageUrl ? (
+            <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', background: gradient }} />
+          )}
+        </div>
       </div>
 
       {/* Actual frame PNG — gold border with transparent interior */}

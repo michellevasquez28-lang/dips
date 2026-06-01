@@ -5,6 +5,9 @@ const backendUrl = process.env.VITE_API_URL || 'http://localhost:5001'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   optimizeDeps: {
     exclude: ['pdfjs-dist'],
   },

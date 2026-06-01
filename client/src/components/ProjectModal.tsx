@@ -140,7 +140,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
     currentUser.id === project.authorDbId
 
   const handleLike = () => {
-    if (!currentUser) return
+    if (!currentUser) { onSignInRequired(); return }
     if (liked) {
       setLiked(false)
       onUnlike(project.id, currentUser.id)

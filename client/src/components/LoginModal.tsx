@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { X, LogIn } from 'lucide-react'
+import { X } from 'lucide-react'
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import { User } from '../types'
 import { api } from '../lib/api'
 
@@ -9,28 +10,24 @@ interface LoginModalProps {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-
-    const trimmedName = name.trim()
-    const trimmedEmail = email.trim().toLowerCase()
-
-    if (!trimmedName) { setError('Please enter your name.'); return }
-    if (!trimmedEmail.endsWith('@dartmouth.edu')) {
-      setError('Please use your @dartmouth.edu email address.')
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError('Google sign-in failed. Please try again.')
       return
     }
-
+    setError('')
     setLoading(true)
     try {
-      const { token, user: apiUser } = await api.dartmouthLogin(trimmedName, trimmedEmail)
-      const initials = apiUser.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+      const { token, user: apiUser } = await api.googleLogin(credentialResponse.credential)
+      const initials = apiUser.name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
       const user: User = { id: apiUser.id, name: apiUser.name, email: apiUser.email, initials }
       onLogin(user, token)
       onClose()
@@ -41,9 +38,9 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
     }
   }
 
-  const inputClass = `w-full px-4 py-2.5 rounded-lg bg-gray-50 text-gray-800 text-sm border border-gray-200
-    focus:outline-none focus:ring-2 focus:ring-green-200 transition-shadow`
-  const labelClass = `block text-xs font-semibold uppercase tracking-widest mb-1.5`
+  const handleGoogleError = () => {
+    setError('Google sign-in was cancelled or failed. Please try again.')
+  }
 
   return (
     <div
@@ -87,65 +84,39 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label
-              className={labelClass}
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', color: '#6b7280' }}
-            >
-              Full Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Jane Doe"
-              className={inputClass}
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-              autoFocus
+        {/* Body */}
+        <div className="p-6 flex flex-col items-center gap-4">
+          {loading ? (
+            <div className="flex items-center gap-2 py-3">
+              <div className="w-5 h-5 border-2 border-[#1a6b3a] border-t-transparent rounded-full animate-spin" />
+              <span
+                className="text-sm text-gray-500"
+                style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+              >
+                Signing in…
+              </span>
+            </div>
+          ) : (
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="outline"
+              size="large"
+              shape="rectangular"
+              text="signin_with"
+              locale="en"
+              width="280"
             />
-          </div>
-
-          <div>
-            <label
-              className={labelClass}
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', color: '#6b7280' }}
-            >
-              Dartmouth Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="f006xyz@dartmouth.edu"
-              className={inputClass}
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-            />
-          </div>
+          )}
 
           {error && (
             <p
-              className="text-red-500 text-xs"
+              className="text-red-500 text-xs text-center"
               style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
             >
               {error}
             </p>
           )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
-            style={{ backgroundColor: '#1a6b3a', fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-          >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <LogIn size={15} />
-            )}
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
 
           <p
             className="text-center text-gray-400 text-xs"
@@ -153,7 +124,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           >
             Only @dartmouth.edu addresses are accepted.
           </p>
-        </form>
+        </div>
       </div>
     </div>
   )
