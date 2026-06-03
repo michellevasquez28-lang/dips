@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    '/Users/michellevasquez/Desktop/my_site/client/index.html',
-    '/Users/michellevasquez/Desktop/my_site/client/src/**/*.{js,ts,jsx,tsx}',
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
     {
       raw: `flex flex-col flex-row flex-1 flex-wrap shrink-0 inline-block
             items-center items-start items-end justify-center justify-between justify-end
