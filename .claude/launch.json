@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dips-client",
-      "runtimeExecutable": "/Users/michellevasquez/.nvm/versions/node/v20.20.2/bin/node",
-      "runtimeArgs": ["/Users/michellevasquez/Desktop/my_site/client/node_modules/.bin/vite", "/Users/michellevasquez/Desktop/my_site/client"],
+      "name": "client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "client"],
       "port": 5173
     }
   ]

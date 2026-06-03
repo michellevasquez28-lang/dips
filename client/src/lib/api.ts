@@ -24,12 +24,6 @@ export async function apiFetch<T>(
 
 export const api = {
   // Auth
-  googleLogin: (credential: string) =>
-    apiFetch<{ token: string; user: any; isNewUser: boolean }>(
-      '/api/auth/google',
-      { method: 'POST', body: JSON.stringify({ credential }) }
-    ),
-
   dartmouthLogin: (name: string, email: string) =>
     apiFetch<{ token: string; user: any; isNewUser: boolean }>(
       '/api/auth/dartmouth',
