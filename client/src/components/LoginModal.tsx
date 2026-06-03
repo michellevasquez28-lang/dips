@@ -9,7 +9,7 @@ interface LoginModalProps {
 }
 
 function buildUser(apiUser: any): User {
-  const initials = apiUser.name
+  const initials = (apiUser.name || 'U')
     .split(' ')
     .map((n: string) => n[0] ?? '')
     .join('')
@@ -26,7 +26,6 @@ function buildUser(apiUser: any): User {
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -41,10 +40,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
     }
     setLoading(true)
     try {
-      const { token, user: apiUser, isNewUser } = await api.dartmouthLogin(
-        name.trim(),
-        trimmedEmail
-      )
+      const { token, user: apiUser, isNewUser } = await api.dartmouthLogin(trimmedEmail)
       onLogin(buildUser(apiUser), token, isNewUser)
       onClose()
     } catch (err: any) {
@@ -67,7 +63,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div
           className="relative px-6 py-5 flex flex-col items-center text-center"
           style={{ backgroundColor: '#1a6b3a' }}
@@ -79,12 +74,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           >
             <X size={16} className="text-white" />
           </button>
-          <img
-            src="/logo.png"
-            alt="DiPs"
-            className="mb-3"
-            style={{ height: 56, width: 'auto' }}
-          />
+          <img src="/logo.png" alt="DiPs" className="mb-3" style={{ height: 56, width: 'auto' }} />
           <h2
             className="text-white text-lg font-bold leading-tight"
             style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
@@ -99,25 +89,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
           </p>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-3">
-          <div>
-            <label
-              className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5"
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-            >
-              Your Name
-            </label>
-            <input
-              className={inputClass}
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-              placeholder="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoFocus
-            />
-          </div>
           <div>
             <label
               className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5"
@@ -133,27 +105,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoFocus
             />
           </div>
 
           {error && (
-            <p
-              className="text-red-500 text-xs text-center"
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-            >
+            <p className="text-red-500 text-xs text-center" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
               {error}
             </p>
           )}
 
           <button
             type="submit"
-            disabled={loading || !name.trim() || !email.trim()}
+            disabled={loading || !email.trim()}
             className="mt-1 w-full py-2.5 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             style={{ backgroundColor: '#1a6b3a', fontFamily: 'Cormorant Garamond, Georgia, serif' }}
           >
-            {loading && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            )}
+            {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
 

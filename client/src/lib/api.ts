@@ -24,10 +24,10 @@ export async function apiFetch<T>(
 
 export const api = {
   // Auth
-  dartmouthLogin: (name: string, email: string) =>
+  dartmouthLogin: (email: string) =>
     apiFetch<{ token: string; user: any; isNewUser: boolean }>(
       '/api/auth/dartmouth',
-      { method: 'POST', body: JSON.stringify({ name, email }) }
+      { method: 'POST', body: JSON.stringify({ email }) }
     ),
 
   // Users / profiles

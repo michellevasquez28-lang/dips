@@ -73,7 +73,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 // PATCH /api/users/:id  — update profile (with optional photo upload)
 router.patch('/:id', upload.single('photo'), async (req: Request, res: Response) => {
   try {
-    const { pronouns, bio, classYear, major, clubs, workExperiences, linkedinUrl } =
+    const { name, pronouns, bio, classYear, major, clubs, workExperiences, linkedinUrl } =
       req.body
 
     const photoUrl = req.file
@@ -81,6 +81,7 @@ router.patch('/:id', upload.single('photo'), async (req: Request, res: Response)
       : undefined
 
     const data: any = {
+      ...(name?.trim() ? { name: name.trim() } : {}),
       pronouns: pronouns || null,
       bio: bio || null,
       classYear: classYear ? parseInt(classYear) : null,

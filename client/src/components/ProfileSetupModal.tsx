@@ -19,6 +19,7 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
   onComplete,
   onSkip,
 }) => {
+  const [displayName, setDisplayName] = useState(currentUser.name || '')
   const [classYear, setClassYear] = useState<string>('')
   const [pronouns, setPronouns] = useState('')
   const [major, setMajor] = useState('')
@@ -64,6 +65,7 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
     setError('')
     try {
       const fd = new FormData()
+      if (displayName.trim()) fd.append('name', displayName.trim())
       fd.append('classYear', classYear)
       if (pronouns) fd.append('pronouns', pronouns)
       if (major) fd.append('major', major)
@@ -75,10 +77,13 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
       if (photoFile) fd.append('photo', photoFile)
 
       const updated = await api.updateUser(currentUser.id, fd, authToken)
+      const newInitials = (updated.name || currentUser.name)
+        .split(' ').map((n: string) => n[0] ?? '').join('').toUpperCase().slice(0, 2)
       onComplete({
         ...currentUser,
+        name: updated.name || currentUser.name,
+        initials: newInitials,
         isProfileComplete: true,
-        name: updated.name,
       })
     } catch (err: any) {
       setError(err.message ?? 'Could not save profile. Please try again.')
@@ -160,6 +165,21 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
                 {currentUser.email}
               </p>
             </div>
+          </div>
+
+          {/* Name */}
+          <div>
+            <label className={labelClass} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+              Full Name <span className="text-green-700">*</span>
+            </label>
+            <input
+              className={inputClass}
+              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+              placeholder="Your full name"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              required
+            />
           </div>
 
           {/* Class year (required) + pronouns */}
