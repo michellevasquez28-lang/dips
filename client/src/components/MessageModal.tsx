@@ -17,7 +17,7 @@ const MessageModal: React.FC<MessageModalProps> = ({ recipientName, recipientId,
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault()
     if (!body.trim()) return
-    onSend({ correspondent: recipientName, subject, body, recipientId })
+    onSend({ correspondent: recipientName, subject, body, recipientId, correspondentId: recipientId ?? '' })
     setSent(true)
   }
 

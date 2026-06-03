@@ -28,7 +28,7 @@ export async function apiFetch<T>(
 export const api = {
   // Auth
   dartmouthLogin: (name: string, email: string) =>
-    apiFetch<{ token: string; user: { id: string; name: string; email: string } }>(
+    apiFetch<{ token: string; user: { id: string; name: string; email: string; isAdmin?: boolean } }>(
       '/api/auth/dartmouth',
       { method: 'POST', body: JSON.stringify({ name, email }) }
     ),
