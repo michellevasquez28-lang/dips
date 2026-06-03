@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -8,36 +9,48 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
-  email     String    @unique
+  email     String   @unique
   password  String
-  createdAt DateTime  @default(now())
-  projects  Project[]
-  comments  Comment[]
-  likes     Like[]
+  createdAt DateTime @default(now())
+
+  // Profile fields (all optional except name/email)
+  pronouns          String?
+  bio               String?
+  classYear         Int?
+  major             String?
+  photoUrl          String?  @db.Text
+  clubs             String?  // JSON array
+  workExperiences   String?  // JSON array of { title, org, years }
+  linkedinUrl       String?
+  isProfileComplete Boolean  @default(false)
+
+  projects         Project[]
+  comments         Comment[]
+  likes            Like[]
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Project {
-  id          String    @id @default(uuid())
+  id          String   @id @default(uuid())
   title       String
   description String
-  tags        String    // JSON array stored as string
+  tags        String   // JSON array
   department  String
   projectType String
   year        Int
-  imageUrl    String?
-  pdfUrl      String?
+  imageUrl    String?  @db.Text
+  pdfUrl      String?  @db.Text
   classCode   String?
   gradient    String
-  frameData   String    // JSON: { x, y, rotation, frameIndex, bobDelay }
+  frameData   String   // JSON: { x, y, rotation, frameIndex, bobDelay }
   authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
+  author      User     @relation(fields: [authorId], references: [id])
   comments    Comment[]
   likes       Like[]
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
 }
 
 model Comment {
@@ -62,12 +75,12 @@ model Like {
 }
 
 model Message {
-  id         String   @id @default(uuid())
-  subject    String
-  body       String
-  fromId     String
-  from       User     @relation("SentMessages",     fields: [fromId], references: [id])
-  toId       String
-  to         User     @relation("ReceivedMessages", fields: [toId],   references: [id])
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  subject   String
+  body      String
+  fromId    String
+  from      User     @relation("SentMessages",     fields: [fromId], references: [id])
+  toId      String
+  to        User     @relation("ReceivedMessages", fields: [toId],   references: [id])
+  createdAt DateTime @default(now())
 }

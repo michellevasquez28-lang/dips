@@ -1,11 +1,29 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react'
+import { GoogleLogin } from '@react-oauth/google'
 import { User } from '../types'
 import { api } from '../lib/api'
 
 interface LoginModalProps {
   onClose: () => void
-  onLogin: (user: User, token: string) => void
+  onLogin: (user: User, token: string, isNewUser?: boolean) => void
+}
+
+function buildUser(apiUser: any): User {
+  const initials = apiUser.name
+    .split(' ')
+    .map((n: string) => n[0] ?? '')
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+  return {
+    id: apiUser.id,
+    name: apiUser.name,
+    email: apiUser.email,
+    initials,
+    isAdmin: apiUser.isAdmin ?? false,
+    isProfileComplete: apiUser.isProfileComplete ?? false,
+  }
 }
 
 const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
@@ -13,8 +31,26 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showEmailForm, setShowEmailForm] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return
+    setError('')
+    setLoading(true)
+    try {
+      const { token, user: apiUser, isNewUser } = await api.googleLogin(
+        credentialResponse.credential
+      )
+      onLogin(buildUser(apiUser), token, isNewUser)
+      onClose()
+    } catch (err: any) {
+      setError(err.message ?? 'Google sign-in failed.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     const trimmedEmail = email.trim().toLowerCase()
@@ -24,15 +60,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
     }
     setLoading(true)
     try {
-      const { token, user: apiUser } = await api.dartmouthLogin(name.trim(), trimmedEmail)
-      const initials = apiUser.name
-        .split(' ')
-        .map((n: string) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-      const user: User = { id: apiUser.id, name: apiUser.name, email: apiUser.email, initials, isAdmin: apiUser.isAdmin ?? false }
-      onLogin(user, token)
+      const { token, user: apiUser, isNewUser } = await api.dartmouthLogin(
+        name.trim(),
+        trimmedEmail
+      )
+      onLogin(buildUser(apiUser), token, isNewUser)
       onClose()
     } catch (err: any) {
       setError(err.message ?? 'Sign-in failed. Please try again.')
@@ -87,70 +119,101 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-3">
-          <div>
-            <label
-              className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5"
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-            >
-              Your Name
-            </label>
-            <input
-              className={inputClass}
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-              placeholder="Full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoFocus
-            />
-          </div>
-          <div>
-            <label
-              className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5"
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-            >
-              Dartmouth Email
-            </label>
-            <input
-              className={inputClass}
-              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-              type="email"
-              placeholder="name.xx.xx@dartmouth.edu"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+        <div className="p-6 flex flex-col gap-4">
+          {/* Google sign-in */}
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google sign-in failed. Please try the email option below.')}
+              theme="outline"
+              size="large"
+              text="signin_with"
+              shape="rectangular"
+              hosted_domain="dartmouth.edu"
             />
           </div>
 
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-100" />
+            <span
+              className="text-xs text-gray-400"
+              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
+            >
+              or use your Dartmouth email
+            </span>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+
+          {/* Email form toggle */}
+          {!showEmailForm ? (
+            <button
+              type="button"
+              onClick={() => setShowEmailForm(true)}
+              className="w-full py-2.5 rounded-lg text-sm border border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-all"
+              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+            >
+              Sign in with name + email
+            </button>
+          ) : (
+            <form onSubmit={handleEmailSubmit} className="flex flex-col gap-3">
+              <div>
+                <label
+                  className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5"
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+                >
+                  Your Name
+                </label>
+                <input
+                  className={inputClass}
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+                  placeholder="Full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label
+                  className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5"
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+                >
+                  Dartmouth Email
+                </label>
+                <input
+                  className={inputClass}
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+                  type="email"
+                  placeholder="name@dartmouth.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !name.trim() || !email.trim()}
+                className="w-full py-2.5 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{ backgroundColor: '#1a6b3a', fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+              >
+                {loading && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                {loading ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+          )}
+
           {error && (
             <p
-              className="text-red-500 text-xs text-center"
+              className="text-red-500 text-xs text-center -mt-1"
               style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
             >
               {error}
             </p>
           )}
-
-          <button
-            type="submit"
-            disabled={loading || !name.trim() || !email.trim()}
-            className="mt-1 w-full py-2.5 rounded-lg text-white text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            style={{ backgroundColor: '#1a6b3a', fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-          >
-            {loading && (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            )}
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-
-          <p
-            className="text-center text-gray-400 text-xs"
-            style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
-          >
-            Only @dartmouth.edu addresses are accepted.
-          </p>
-        </form>
+        </div>
       </div>
     </div>
   )

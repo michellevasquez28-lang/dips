@@ -81,7 +81,7 @@ async function renderPDFFirstPage(file: File): Promise<string> {
   canvas.width = viewport.width
   canvas.height = viewport.height
   const ctx = canvas.getContext('2d')!
-  await page.render({ canvasContext: ctx, viewport }).promise
+  await page.render({ canvasContext: ctx, viewport, canvas }).promise
   return canvas.toDataURL('image/jpeg', 0.88)
 }
 
@@ -111,7 +111,7 @@ async function renderPDFForFrame(file: File, frameIndex: number): Promise<string
   ctx.fillRect(0, 0, targetW, targetH)
   ctx.save()
   ctx.translate(Math.round((targetW - vp.width) / 2), Math.round((targetH - vp.height) / 2))
-  await page.render({ canvasContext: ctx, viewport: vp }).promise
+  await page.render({ canvasContext: ctx, viewport: vp, canvas }).promise
   ctx.restore()
 
   return canvas.toDataURL('image/jpeg', 0.9)

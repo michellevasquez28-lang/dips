@@ -1,16 +1,17 @@
 import { Router, Request, Response } from 'express'
-import { v4 as uuidv4 } from 'uuid'
-import { comments, findUserById } from '../src/store'
+import { PrismaClient } from '@prisma/client'
 
 const router = Router()
+const prisma = new PrismaClient()
 
 router.post('/', async (req: Request, res: Response) => {
   try {
     const { text, authorId, projectId } = req.body
-    const comment = { id: uuidv4(), text, authorId, projectId, createdAt: new Date() }
-    comments.push(comment)
-    const author = findUserById(authorId)
-    res.json({ ...comment, author: { name: author?.name ?? 'Anonymous' } })
+    const comment = await prisma.comment.create({
+      data: { text, authorId, projectId },
+      include: { author: { select: { name: true } } },
+    })
+    res.json(comment)
   } catch (e) {
     res.status(500).json({ error: 'Server error' })
   }
@@ -18,14 +19,12 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.get('/project/:projectId', async (req: Request, res: Response) => {
   try {
-    const result = comments
-      .filter((c) => c.projectId === req.params.projectId)
-      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-      .map((c) => {
-        const author = findUserById(c.authorId)
-        return { ...c, author: { name: author?.name ?? 'Anonymous' } }
-      })
-    res.json(result)
+    const comments = await prisma.comment.findMany({
+      where: { projectId: req.params.projectId },
+      include: { author: { select: { name: true } } },
+      orderBy: { createdAt: 'asc' },
+    })
+    res.json(comments)
   } catch (e) {
     res.status(500).json({ error: 'Server error' })
   }

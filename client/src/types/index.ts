@@ -20,7 +20,7 @@ export interface Project {
   pdfUrl?: string
   gradient: string
   authorEmail?: string
-  authorDbId?: string   // DB primary key, used for delete/ownership checks
+  authorDbId?: string
   likes: number
   comments: Comment[]
   year: number
@@ -31,7 +31,7 @@ export interface FrameData {
   x: number
   y: number
   rotation: number
-  frameIndex: number   // 1–18, references /frames/frame-N.png
+  frameIndex: number
   bobDelay: number
 }
 
@@ -45,7 +45,7 @@ export interface FilterState {
 export interface Message {
   id: string
   correspondent: string
-  correspondentId: string   // DB id of the other party, used to open thread
+  correspondentId?: string
   subject: string
   body: string
   sentAt: string
@@ -58,6 +58,42 @@ export interface User {
   email: string
   initials: string
   isAdmin?: boolean
+  isProfileComplete?: boolean
+}
+
+export interface WorkExperience {
+  title: string
+  org: string
+  years: string
+}
+
+export interface UserProfile {
+  id: string
+  name: string
+  email: string
+  initials: string
+  pronouns: string | null
+  bio: string | null
+  classYear: number | null
+  major: string | null
+  photoUrl: string | null
+  clubs: string[]
+  workExperiences: WorkExperience[]
+  linkedinUrl: string | null
+  isProfileComplete: boolean
+  projects: {
+    id: string
+    title: string
+    department: string
+    projectType: string
+    classCode: string | null
+    year: number
+    imageUrl: string | null
+    gradient: string
+    likes: number
+    tags: string[]
+    frameData: FrameData
+  }[]
 }
 
 export interface CanvasTransform {

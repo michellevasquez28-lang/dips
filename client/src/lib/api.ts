@@ -1,6 +1,4 @@
-// Central API client — all calls to the Express backend go through here.
-// In production, VITE_API_URL is the deployed backend URL (e.g. https://dips-api.railway.app).
-// In local dev, it's empty and the Vite proxy forwards /api → localhost:5001.
+// Central API client — all calls go through here.
 const BASE = (import.meta.env.VITE_API_URL as string) || ''
 
 export async function apiFetch<T>(
@@ -12,7 +10,6 @@ export async function apiFetch<T>(
     ...(options.headers as Record<string, string>),
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
-  // Don't set Content-Type for FormData — browser sets it with boundary automatically
   if (!(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json'
   }
@@ -27,11 +24,24 @@ export async function apiFetch<T>(
 
 export const api = {
   // Auth
+  googleLogin: (credential: string) =>
+    apiFetch<{ token: string; user: any; isNewUser: boolean }>(
+      '/api/auth/google',
+      { method: 'POST', body: JSON.stringify({ credential }) }
+    ),
+
   dartmouthLogin: (name: string, email: string) =>
-    apiFetch<{ token: string; user: { id: string; name: string; email: string } }>(
+    apiFetch<{ token: string; user: any; isNewUser: boolean }>(
       '/api/auth/dartmouth',
       { method: 'POST', body: JSON.stringify({ name, email }) }
     ),
+
+  // Users / profiles
+  getUser: (id: string, token?: string | null) =>
+    apiFetch<any>(`/api/users/${id}`, {}, token),
+
+  updateUser: (id: string, formData: FormData, token: string) =>
+    apiFetch<any>(`/api/users/${id}`, { method: 'PATCH', body: formData }, token),
 
   // Projects
   getProjects: (token?: string | null) =>

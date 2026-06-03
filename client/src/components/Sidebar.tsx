@@ -20,6 +20,7 @@ interface SidebarProps {
   currentUser: User | null
   onLoginClick: () => void
   onLogout: () => void
+  onMyProfile?: () => void
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -39,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentUser,
   onLoginClick,
   onLogout,
+  onMyProfile,
 }) => {
   const [filterOpen, setFilterOpen] = useState(false)
 
@@ -209,13 +211,18 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="px-5 pb-5 border-t border-white/15 pt-3">
         {currentUser ? (
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-semibold text-white text-xs"
+            <button
+              onClick={onMyProfile}
+              aria-label="View my profile"
+              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-semibold text-white text-xs hover:ring-2 hover:ring-white/40 transition-all"
               style={{ backgroundColor: 'rgba(255,255,255,0.2)', fontFamily: 'Cormorant Garamond, Georgia, serif' }}
             >
               {currentUser.initials}
-            </div>
-            <div className="flex-1 min-w-0">
+            </button>
+            <button
+              onClick={onMyProfile}
+              className="flex-1 min-w-0 text-left hover:opacity-80 transition-opacity"
+            >
               <p
                 className="text-white text-xs font-semibold truncate leading-tight"
                 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
@@ -226,9 +233,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                 className="text-white/50 text-xs truncate"
                 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
               >
-                {currentUser.email}
+                My profile
               </p>
-            </div>
+            </button>
             <button
               onClick={onLogout}
               aria-label="Sign out"

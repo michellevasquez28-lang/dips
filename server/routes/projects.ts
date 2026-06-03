@@ -1,22 +1,17 @@
 import { Router, Request, Response } from 'express'
+import { PrismaClient } from '@prisma/client'
 import multer from 'multer'
-import { v4 as uuidv4 } from 'uuid'
-import {
-  projects, comments, likes,
-  findUserById,
-  StoredProject,
-} from '../src/store'
 
 const router = Router()
+const prisma = new PrismaClient()
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
 })
 
-function formatProject(p: StoredProject) {
-  const author = findUserById(p.authorId)
-  const authorName = author?.name ?? 'Unknown'
+function formatProject(p: any) {
+  const authorName: string = p.author?.name ?? 'Unknown'
   const initials = authorName
     .split(' ')
     .map((n: string) => n[0] ?? '')
@@ -24,12 +19,24 @@ function formatProject(p: StoredProject) {
     .toUpperCase()
     .slice(0, 2)
 
-  const projectComments = comments
-    .filter((c) => c.projectId === p.id)
-    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-    .map((c) => {
-      const cAuthor = findUserById(c.authorId)
-      const cName = cAuthor?.name ?? 'Anonymous'
+  return {
+    id: p.id,
+    title: p.title,
+    author: authorName,
+    authorInitials: initials,
+    authorEmail: p.author?.email ?? null,
+    authorDbId: p.authorId,
+    department: p.department,
+    projectType: p.projectType,
+    classCode: p.classCode ?? null,
+    description: p.description,
+    tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
+    imageUrl: p.imageUrl ?? null,
+    pdfUrl: p.pdfUrl ?? null,
+    gradient: p.gradient,
+    likes: p.likes?.length ?? 0,
+    comments: (p.comments ?? []).map((c: any) => {
+      const cName: string = c.author?.name ?? 'Anonymous'
       return {
         id: c.id,
         text: c.text,
@@ -40,40 +47,35 @@ function formatProject(p: StoredProject) {
           .join('')
           .toUpperCase()
           .slice(0, 2),
-        createdAt: c.createdAt.toISOString().split('T')[0],
+        createdAt: c.createdAt
+          ? new Date(c.createdAt).toISOString().split('T')[0]
+          : '',
       }
-    })
-
-  const projectLikes = likes.filter((l) => l.projectId === p.id)
-
-  return {
-    id: p.id,
-    title: p.title,
-    author: authorName,
-    authorInitials: initials,
-    authorEmail: author?.email ?? null,
-    authorDbId: p.authorId,
-    department: p.department,
-    projectType: p.projectType,
-    classCode: p.classCode ?? null,
-    description: p.description,
-    tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
-    imageUrl: p.imageUrl ?? null,
-    pdfUrl: p.pdfUrl ?? null,
-    gradient: p.gradient,
-    likes: projectLikes.length,
-    comments: projectComments,
+    }),
     year: p.year,
-    frameData: typeof p.frameData === 'string' ? JSON.parse(p.frameData) : p.frameData,
+    frameData:
+      typeof p.frameData === 'string' ? JSON.parse(p.frameData) : p.frameData,
     createdAt: p.createdAt,
   }
+}
+
+const FULL_INCLUDE = {
+  author: { select: { id: true, name: true, email: true } },
+  comments: {
+    include: { author: { select: { name: true } } },
+    orderBy: { createdAt: 'asc' as const },
+  },
+  likes: true,
 }
 
 // GET all projects
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const sorted = [...projects].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    res.json(sorted.map(formatProject))
+    const projects = await prisma.project.findMany({
+      include: FULL_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    })
+    res.json(projects.map(formatProject))
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'Server error' })
@@ -83,7 +85,10 @@ router.get('/', async (_req: Request, res: Response) => {
 // GET single project
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const project = projects.find((p) => p.id === req.params.id)
+    const project = await prisma.project.findUnique({
+      where: { id: req.params.id },
+      include: FULL_INCLUDE,
+    })
     if (!project) return res.status(404).json({ error: 'Not found' })
     res.json(formatProject(project))
   } catch (e) {
@@ -101,8 +106,16 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const {
-        title, description, tags, department, projectType,
-        classCode, year, gradient, frameData, authorId,
+        title,
+        description,
+        tags,
+        department,
+        projectType,
+        classCode,
+        year,
+        gradient,
+        frameData,
+        authorId,
       } = req.body
 
       const files = req.files as {
@@ -112,28 +125,29 @@ router.post(
 
       const imageUrl = files.image?.[0]
         ? `data:${files.image[0].mimetype};base64,${files.image[0].buffer.toString('base64')}`
-        : null
+        : undefined
+
       const pdfUrl = files.pdf?.[0]
         ? `data:application/pdf;base64,${files.pdf[0].buffer.toString('base64')}`
-        : null
+        : undefined
 
-      const project: StoredProject = {
-        id: uuidv4(),
-        title,
-        description,
-        tags,
-        department,
-        projectType,
-        classCode: classCode || null,
-        year: parseInt(year),
-        gradient,
-        frameData,
-        imageUrl,
-        pdfUrl,
-        authorId,
-        createdAt: new Date(),
-      }
-      projects.push(project)
+      const project = await prisma.project.create({
+        data: {
+          title,
+          description,
+          tags,
+          department,
+          projectType,
+          classCode: classCode || null,
+          year: parseInt(year),
+          gradient,
+          frameData,
+          imageUrl,
+          pdfUrl,
+          authorId,
+        },
+        include: FULL_INCLUDE,
+      })
 
       res.json(formatProject(project))
     } catch (e) {
@@ -143,32 +157,27 @@ router.post(
   }
 )
 
-// DELETE project (only by author or admin)
+// DELETE project (owner or admin)
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { authorId: requesterId } = req.body
-    const idx = projects.findIndex((p) => p.id === req.params.id)
-    if (idx === -1) return res.status(404).json({ error: 'Not found' })
+    const project = await prisma.project.findUnique({ where: { id: req.params.id } })
+    if (!project) return res.status(404).json({ error: 'Not found' })
 
-    const project = projects[idx]
     const isOwner = project.authorId === requesterId
     let isAdmin = false
     if (!isOwner) {
       const adminEmail = (process.env.ADMIN_EMAIL ?? '').toLowerCase().trim()
       if (adminEmail) {
-        const requester = findUserById(requesterId)
+        const requester = await prisma.user.findUnique({ where: { id: requesterId } })
         isAdmin = requester?.email === adminEmail
       }
     }
     if (!isOwner && !isAdmin) return res.status(403).json({ error: 'Forbidden' })
 
-    projects.splice(idx, 1)
-    for (let i = comments.length - 1; i >= 0; i--) {
-      if (comments[i].projectId === req.params.id) comments.splice(i, 1)
-    }
-    for (let i = likes.length - 1; i >= 0; i--) {
-      if (likes[i].projectId === req.params.id) likes.splice(i, 1)
-    }
+    await prisma.like.deleteMany({ where: { projectId: req.params.id } })
+    await prisma.comment.deleteMany({ where: { projectId: req.params.id } })
+    await prisma.project.delete({ where: { id: req.params.id } })
 
     res.json({ success: true })
   } catch (e) {
@@ -181,14 +190,14 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.post('/:id/like', async (req: Request, res: Response) => {
   try {
     const { userId } = req.body
-    const existingIdx = likes.findIndex(
-      (l) => l.userId === userId && l.projectId === req.params.id
-    )
-    if (existingIdx !== -1) {
-      likes.splice(existingIdx, 1)
+    const existing = await prisma.like.findUnique({
+      where: { userId_projectId: { userId, projectId: req.params.id } },
+    })
+    if (existing) {
+      await prisma.like.delete({ where: { id: existing.id } })
       return res.json({ liked: false })
     }
-    likes.push({ id: uuidv4(), userId, projectId: req.params.id })
+    await prisma.like.create({ data: { userId, projectId: req.params.id } })
     res.json({ liked: true })
   } catch (e) {
     console.error(e)

@@ -14,7 +14,7 @@ interface ProjectModalProps {
   onLike: (id: string, userId: string) => void
   onUnlike: (id: string, userId: string) => void
   onComment: (projectId: string, text: string, userId: string, userName: string) => void
-  onAuthorClick: (authorName: string) => void
+  onAuthorClick: (authorDbId: string) => void
   onMessageSent: (msg: Omit<Message, 'id' | 'sentAt' | 'direction'> & { recipientId?: string }) => void
   onDelete: (id: string, authorDbId: string) => void
   onSignInRequired: () => void
@@ -229,7 +229,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
             {/* Author — clickable */}
             <button
-              onClick={() => onAuthorClick(project.author)}
+              onClick={() => onAuthorClick(project.authorDbId ?? '')}
               className="flex items-center gap-3 mb-4 group hover:opacity-80 transition-opacity text-left"
               aria-label={`View all works by ${project.author}`}
             >
