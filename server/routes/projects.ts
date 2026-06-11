@@ -33,6 +33,7 @@ function formatProject(p: any) {
     tags: typeof p.tags === 'string' ? JSON.parse(p.tags) : p.tags,
     imageUrl: p.imageUrl ?? null,
     pdfUrl: p.pdfUrl ?? null,
+    slides: p.slides ? (typeof p.slides === 'string' ? JSON.parse(p.slides) : p.slides) : null,
     gradient: p.gradient,
     likes: p.likes?.length ?? 0,
     comments: (p.comments ?? []).map((c: any) => {

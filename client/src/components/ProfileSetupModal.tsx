@@ -11,7 +11,7 @@ interface ProfileSetupModalProps {
 }
 
 const CURRENT_YEAR = new Date().getFullYear()
-const CLASS_YEARS = Array.from({ length: 8 }, (_, i) => CURRENT_YEAR + i)
+const CLASS_YEARS = Array.from({ length: 13 }, (_, i) => CURRENT_YEAR - 6 + i)
 
 const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
   currentUser,
@@ -60,7 +60,6 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!classYear) { setError('Class year is required.'); return }
     setLoading(true)
     setError('')
     try {
@@ -119,7 +118,7 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
               className="text-white/70 text-xs mt-0.5"
               style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
             >
-              Tell the community about yourself — all fields optional except class year
+              Tell the community about yourself — all fields optional
             </p>
           </div>
           <button
@@ -186,14 +185,13 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
-                Class Year <span className="text-green-700">*</span>
+                Class Year
               </label>
               <select
                 className={inputClass}
                 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
                 value={classYear}
                 onChange={(e) => setClassYear(e.target.value)}
-                required
               >
                 <option value="">Select year</option>
                 {CLASS_YEARS.map((y) => (

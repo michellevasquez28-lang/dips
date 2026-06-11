@@ -86,11 +86,13 @@ router.patch('/:id', upload.single('photo'), async (req: Request, res: Response)
       bio: bio || null,
       classYear: classYear ? parseInt(classYear) : null,
       major: major || null,
-      clubs: clubs || null,
-      workExperiences: workExperiences || null,
       linkedinUrl: linkedinUrl || null,
       isProfileComplete: true,
     }
+    // Only update clubs/workExperiences if they were explicitly included in the request,
+    // so editing bio/photo doesn't silently wipe saved clubs and experiences.
+    if (clubs !== undefined) data.clubs = clubs || null
+    if (workExperiences !== undefined) data.workExperiences = workExperiences || null
     if (photoUrl !== undefined) data.photoUrl = photoUrl
 
     const user = await prisma.user.update({

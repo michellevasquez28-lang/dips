@@ -52,6 +52,17 @@ export default function App() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  // Validate the stored session on load — if the user ID no longer exists
+  // (e.g. after a DB reseed), clear the stale session silently.
+  useEffect(() => {
+    if (!savedAuth?.user?.id || !savedAuth?.token) return
+    api.getUser(savedAuth.user.id, savedAuth.token).catch(() => {
+      setCurrentUser(null)
+      setAuthToken(null)
+      saveAuth(null, null)
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!currentUser || !authToken) { setMessages([]); return }
     setMessagesLoading(true)

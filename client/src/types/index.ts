@@ -18,6 +18,7 @@ export interface Project {
   tags: string[]
   imageUrl?: string
   pdfUrl?: string
+  slides?: string[]
   gradient: string
   authorEmail?: string
   authorDbId?: string

@@ -30,9 +30,6 @@ router.post('/dartmouth', async (req: Request, res: Response) => {
     if (!email) return res.status(400).json({ error: 'Email is required.' })
 
     const normalizedEmail = email.toLowerCase().trim()
-    if (!normalizedEmail.endsWith('@dartmouth.edu')) {
-      return res.status(403).json({ error: 'Only @dartmouth.edu addresses are allowed.' })
-    }
 
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
     const isNewUser = !existing

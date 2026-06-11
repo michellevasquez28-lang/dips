@@ -34,10 +34,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
     e.preventDefault()
     setError('')
     const trimmedEmail = email.trim().toLowerCase()
-    if (!trimmedEmail.endsWith('@dartmouth.edu')) {
-      setError('Only @dartmouth.edu addresses are accepted.')
-      return
-    }
     setLoading(true)
     try {
       const { token, user: apiUser, isNewUser } = await api.dartmouthLogin(trimmedEmail)
@@ -79,13 +75,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
             className="text-white text-lg font-bold leading-tight"
             style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
           >
-            Sign in with your Dartmouth account
+            Sign in to DiPs
           </h2>
           <p
             className="text-white/70 text-xs mt-1"
             style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
           >
-            Connect your uploads and messages to your account
+            Your email links you to all your uploads and messages
           </p>
         </div>
 
@@ -95,13 +91,13 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
               className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5"
               style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
             >
-              Dartmouth Email
+              Email Address
             </label>
             <input
               className={inputClass}
               style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
               type="email"
-              placeholder="name@dartmouth.edu"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -129,7 +125,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onLogin }) => {
             className="text-center text-gray-400 text-xs"
             style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
           >
-            Only @dartmouth.edu addresses are accepted.
+            Use the same email each time to access your account.
           </p>
         </form>
       </div>

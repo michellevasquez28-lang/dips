@@ -73,7 +73,7 @@ const FrameContent: React.FC<FrameContentProps> = ({ frameIndex, gradient, image
         >
           {imageUrl ? (
             <div style={{ width: '100%', height: '100%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ) : (
             <div style={{ width: '100%', height: '100%', background: gradient }} />

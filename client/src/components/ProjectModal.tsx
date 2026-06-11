@@ -116,6 +116,139 @@ const PDFViewer = ({ pdfUrl }: { pdfUrl: string }) => {
   return viewer
 }
 
+// ── Slides viewer (image array with fullscreen support) ──────────────────────
+const SlidesViewer = ({ slides, gradient, imageUrl, title }: {
+  slides: string[]
+  gradient: string
+  imageUrl?: string
+  title: string
+}) => {
+  const [index, setIndex] = useState(0)
+  const [fullscreen, setFullscreen] = useState(false)
+
+  const total = slides.length
+  const current = slides[index]
+
+  const prev = () => setIndex((i) => (i - 1 + total) % total)
+  const next = () => setIndex((i) => (i + 1) % total)
+
+  const imgEl = (fs: boolean) => (
+    <img
+      src={current}
+      alt={`${title} — slide ${index + 1}`}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: fs ? 'contain' : 'cover',
+        display: 'block',
+      }}
+    />
+  )
+
+  const controls = (fs: boolean) => (
+    <div
+      className={`flex items-center gap-3 px-4 py-2 rounded-full shadow-md ${
+        fs ? 'bg-white/10 text-white mt-4' : 'absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/50 text-white'
+      }`}
+      style={{ backdropFilter: 'blur(6px)' }}
+    >
+      <button onClick={prev} aria-label="Previous slide" className="hover:opacity-70 transition-opacity">
+        <ChevronLeft size={16} />
+      </button>
+      <span className="text-sm tabular-nums" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+        {index + 1} / {total}
+      </span>
+      <button onClick={next} aria-label="Next slide" className="hover:opacity-70 transition-opacity">
+        <ChevronRight size={16} />
+      </button>
+      {!fs && (
+        <button onClick={() => setFullscreen(true)} aria-label="View fullscreen" className="ml-1 hover:opacity-70 transition-opacity">
+          <Maximize2 size={14} />
+        </button>
+      )}
+    </div>
+  )
+
+  return (
+    <>
+      {/* Inline viewer */}
+      <div className="relative rounded-xl overflow-hidden" style={{ height: 260 }}>
+        {imgEl(false)}
+        {total > 1 && controls(false)}
+      </div>
+
+      {/* Fullscreen overlay */}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-[300] bg-black flex flex-col items-center justify-center"
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') prev()
+            if (e.key === 'ArrowRight') next()
+            if (e.key === 'Escape') setFullscreen(false)
+          }}
+          tabIndex={-1}
+          // eslint-disable-next-line jsx-a11y/no-autofocus
+          ref={(el) => el?.focus()}
+        >
+          <button
+            onClick={() => setFullscreen(false)}
+            aria-label="Exit fullscreen"
+            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+          >
+            <Minimize2 size={20} className="text-white" />
+          </button>
+
+          {/* Left arrow */}
+          {total > 1 && (
+            <button
+              onClick={prev}
+              aria-label="Previous slide"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+            >
+              <ChevronLeft size={24} className="text-white" />
+            </button>
+          )}
+
+          {/* Slide image */}
+          <div style={{ width: '90vw', height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img
+              src={current}
+              alt={`${title} — slide ${index + 1}`}
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 8, boxShadow: '0 8px 60px rgba(0,0,0,0.6)' }}
+            />
+          </div>
+
+          {/* Right arrow */}
+          {total > 1 && (
+            <button
+              onClick={next}
+              aria-label="Next slide"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+            >
+              <ChevronRight size={24} className="text-white" />
+            </button>
+          )}
+
+          {total > 1 && controls(true)}
+
+          {/* Dot indicators */}
+          <div className="flex gap-1.5 mt-3">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setIndex(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className="rounded-full transition-all"
+                style={{ width: i === index ? 20 : 8, height: 8, backgroundColor: i === index ? 'white' : 'rgba(255,255,255,0.35)' }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 const ProjectModal: React.FC<ProjectModalProps> = ({
   project,
   currentUser,
@@ -186,10 +319,17 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
             </button>
           </div>
 
-          {/* Hero: PDF viewer or image/gradient */}
+          {/* Hero: PDF viewer, slides, or fallback image/gradient */}
           <div className="mx-5 mb-5">
             {project.pdfUrl ? (
               <PDFViewer pdfUrl={project.pdfUrl} />
+            ) : project.slides && project.slides.length > 0 ? (
+              <SlidesViewer
+                slides={project.slides}
+                gradient={project.gradient}
+                imageUrl={project.imageUrl}
+                title={project.title}
+              />
             ) : (
               <div className="rounded-xl overflow-hidden" style={{ height: 260 }}>
                 {project.imageUrl ? (

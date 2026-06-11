@@ -26,6 +26,7 @@ export function apiToProject(p: any): Project {
     tags: Array.isArray(p.tags) ? p.tags : JSON.parse(p.tags || '[]'),
     imageUrl: p.imageUrl ?? undefined,
     pdfUrl: p.pdfUrl ?? undefined,
+    slides: Array.isArray(p.slides) ? p.slides : (p.slides ? JSON.parse(p.slides) : undefined),
     gradient: p.gradient,
     likes: typeof p.likes === 'number' ? p.likes : (p.likes?.length ?? 0),
     comments: Array.isArray(p.comments) ? p.comments : [],

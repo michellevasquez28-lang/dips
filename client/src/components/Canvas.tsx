@@ -48,8 +48,8 @@ const Canvas = forwardRef<CanvasHandle, CanvasProps>(({
           transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
           transformOrigin: '0 0',
           position: 'absolute',
-          width: 2600,
-          height: 1800,
+          width: 3300,
+          height: 2300,
           willChange: 'transform',
         }}
       >

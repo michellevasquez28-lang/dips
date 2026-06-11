@@ -46,6 +46,7 @@ model Project {
   classCode   String?
   gradient    String
   frameData   String   // JSON: { x, y, rotation, frameIndex, bobDelay }
+  slides      String?  @db.Text  // JSON array of image data URLs (3-4 per project)
   authorId    String
   author      User     @relation(fields: [authorId], references: [id])
   comments    Comment[]

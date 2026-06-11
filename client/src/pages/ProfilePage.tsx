@@ -83,7 +83,8 @@ const EditPanel = ({
   const photoRef = React.useRef<HTMLInputElement>(null)
 
   const CURRENT_YEAR = new Date().getFullYear()
-  const CLASS_YEARS = Array.from({ length: 8 }, (_, i) => CURRENT_YEAR + i)
+  // Include 6 past years through 6 future years so alumni and current students both have options
+  const CLASS_YEARS = Array.from({ length: 13 }, (_, i) => CURRENT_YEAR - 6 + i)
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -233,12 +234,17 @@ const EditPanel = ({
           </button>
         </div>
         {workExps.map((w, i) => (
-          <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 mb-2">
-            <input className={inputClass} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }} placeholder="Title / Role" value={w.title} onChange={(e) => updateWork(i, 'title', e.target.value)} />
-            <input className={inputClass} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }} placeholder="Organization" value={w.org} onChange={(e) => updateWork(i, 'org', e.target.value)} />
-            <button type="button" onClick={() => setWorkExps((w) => w.filter((_, idx) => idx !== i))} className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-red-300 hover:text-red-500 transition-colors">
-              <Trash2 size={13} />
-            </button>
+          <div key={i} className="flex flex-col gap-1.5 mb-3 p-3 rounded-lg bg-white border border-gray-100">
+            <div className="grid grid-cols-2 gap-2">
+              <input className={inputClass} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }} placeholder="Title / Role" value={w.title} onChange={(e) => updateWork(i, 'title', e.target.value)} />
+              <input className={inputClass} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }} placeholder="Organization" value={w.org} onChange={(e) => updateWork(i, 'org', e.target.value)} />
+            </div>
+            <div className="flex gap-2 items-center">
+              <input className={`${inputClass} flex-1`} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }} placeholder="Years (e.g. Summer 2024)" value={w.years} onChange={(e) => updateWork(i, 'years', e.target.value)} />
+              <button type="button" onClick={() => setWorkExps((w) => w.filter((_, idx) => idx !== i))} className="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 hover:border-red-300 hover:text-red-500 transition-colors shrink-0">
+                <Trash2 size={13} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -283,10 +289,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
   useEffect(() => {
     setLoading(true)
     setEditOpen(false)
+    setProfile(null)
     api
       .getUser(userId, authToken)
       .then(setProfile)
-      .catch(console.error)
+      .catch(() => setProfile(null))
       .finally(() => setLoading(false))
   }, [userId])
 
@@ -322,17 +329,20 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
     <div className="flex-1 overflow-y-auto bg-white">
       {/* Top bar */}
       <div
-        className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-100 px-6 py-3 flex items-center gap-4"
+        className="sticky top-0 z-10 px-6 py-3 flex items-center gap-4"
+        style={{ backgroundColor: '#1a6b3a' }}
       >
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-          style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+          className="flex items-center gap-2 text-sm transition-colors"
+          style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', color: 'rgba(255,255,255,0.75)' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')}
         >
           <ArrowLeft size={15} /> Gallery
         </button>
         <div className="flex-1" />
-        <img src="/logo.png" alt="DiPs" style={{ height: 28, width: 'auto', opacity: 0.7 }} />
+        <img src="/logo.png" alt="DiPs" style={{ height: 32, width: 'auto' }} />
       </div>
 
       {/* Content */}
@@ -506,15 +516,23 @@ const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
 
             {profile.projects.length === 0 ? (
-              <p
-                className="text-gray-400 text-sm"
-                style={{
-                  fontFamily: 'Cormorant Garamond, Georgia, serif',
-                  fontStyle: 'italic',
-                }}
+              <div
+                className="flex flex-col items-center justify-center py-16 text-center"
+                style={{ borderRadius: 16, background: 'rgba(26,107,58,0.03)', border: '1px dashed rgba(26,107,58,0.15)' }}
               >
-                No works in the gallery yet.
-              </p>
+                <p
+                  className="text-gray-400 text-lg"
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
+                >
+                  Nothing here yet!
+                </p>
+                <p
+                  className="text-gray-300 text-sm mt-1"
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+                >
+                  Upload a project to add it to the gallery.
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-3 gap-3">
                 {profile.projects.map((p) => (
